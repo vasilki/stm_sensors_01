@@ -22,6 +22,7 @@ void main_usercode(void)
   if(gl_time == 1)
   {
     button_SetActiveButtons('C',13);
+    button_SetActiveButtons('B',6);
   }
   else
   {
@@ -35,14 +36,16 @@ void main_usercode(void)
 
   //loc_adc_val = adc_GetValue(&hadc1);
   button_Processing();
-  loc_adc_val = button_GetButtonState('C',13);
+  loc_adc_val = button_GetButtonState('B',6);
   if(loc_adc_val != 0)
   {
     HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_SET);
   }
   else
   {
     HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
 

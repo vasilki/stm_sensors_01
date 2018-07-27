@@ -28,7 +28,7 @@ void button_Processing(void)
   {
     if(loc_ButtonState[loc_i].B_IsActive != 0)
     {
-      loc_ButtonState[loc_i].B_IsPressed = !(unsigned char)HAL_GPIO_ReadPin(loc_ButtonState[loc_i].pLine,
+      loc_ButtonState[loc_i].B_IsPressed = (unsigned char)HAL_GPIO_ReadPin(loc_ButtonState[loc_i].pLine,
           loc_ButtonState[loc_i].Pin);
     }
     else
