@@ -3,26 +3,30 @@
 #include <stdio.h>
 #include "adc.h"
 #include "button_handle.h"
+#include "timers.h"
+
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
 extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
+extern TIM_HandleTypeDef htim10;
 
 static void mu_TimeTransmit(UART_HandleTypeDef *par_huart,
                             unsigned int par_time);
-static void mu_UpdatePeriod(void);
 
-static unsigned int gl_time = 0;
 
 void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
   char loc_buff[40];
+  unsigned int loc_time = tim_GetPeriod();
+  unsigned int loc_time_ms = tim_GetTimeFromStartMS();
 
-  mu_UpdatePeriod();
-  if(gl_time == 1)
+  tim_UpdatePeriod();
+  if(loc_time == 1)
   {
     button_SetActiveButtons('C',13);
     button_SetActiveButtons('B',6);
+    tim_StartTimer(&htim10);
   }
   else
   {
@@ -32,7 +36,7 @@ void main_usercode(void)
 
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
   HAL_Delay(300);*/
-  mu_TimeTransmit(&huart1,gl_time);
+  mu_TimeTransmit(&huart1,loc_time_ms);
 
   //loc_adc_val = adc_GetValue(&hadc1);
   button_Processing();
@@ -49,8 +53,9 @@ void main_usercode(void)
   }
 
 
-  sprintf(loc_buff,"ADC VALUE=%d\n\r",loc_adc_val);
-  HAL_UART_Transmit(&huart1, (uint8_t*)loc_buff, strlen(loc_buff),0xFFFF);
+
+ // sprintf(loc_buff,"ADC VALUE=%d\n\r",loc_adc_val);
+ // HAL_UART_Transmit(&huart1, (uint8_t*)loc_buff, strlen(loc_buff),0xFFFF);
 
   return;
 }
@@ -68,10 +73,5 @@ void mu_TimeTransmit(UART_HandleTypeDef *par_huart,
   return;
 }
 
-void mu_UpdatePeriod(void)
-{
-  gl_time++;
-  return;
-}
 
 
