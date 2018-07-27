@@ -23,7 +23,7 @@ unsigned int tim_GetPeriod(void)
 
 void tim_StartTimer(TIM_HandleTypeDef *par_htim)
 {
-  HAL_TIM_Base_Start(par_htim);
+ // HAL_TIM_Base_Start(par_htim);
   HAL_TIM_Base_Start_IT(par_htim);
   return;
 }

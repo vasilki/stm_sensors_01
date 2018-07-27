@@ -18,10 +18,13 @@ void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
   char loc_buff[40];
-  unsigned int loc_time = tim_GetPeriod();
-  unsigned int loc_time_ms = tim_GetTimeFromStartMS();
+  unsigned int loc_time;
+  unsigned int loc_time_ms;
 
   tim_UpdatePeriod();
+  loc_time = tim_GetPeriod();
+  loc_time_ms = tim_GetTimeFromStartMS();
+
   if(loc_time == 1)
   {
     button_SetActiveButtons('C',13);
