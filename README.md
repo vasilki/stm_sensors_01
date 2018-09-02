@@ -1,4 +1,16 @@
 # stm_sensors
+----WATER SENSOR
+Pinout:
+PA0 (CN7.28) = S
++5V (CN7.18) = +
+GND = GND
+
+Water level is printed trough UART in case of change.
+
+
+---------------
+
+
 Using LED and UART on STM32 NUCLEO-F401RE.
 UART is UART1, PINS PA9=TX,PA10=RX. PA9 on board is 21 PIN of CN10, PA10 is 33 PIN on CN10.
 LED is LD2 on board, PA5 GPIO_output.

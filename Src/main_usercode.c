@@ -16,6 +16,7 @@ void main_Init();
 void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
+  static unsigned int loc_prev_adc_val = 0xFFFFFFFF;
   unsigned char loc_B_button_state = 0;
   uint8_t loc_buff[200];
   unsigned int loc_time;
@@ -33,9 +34,11 @@ void main_usercode(void)
 
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
   HAL_Delay(300);*/
-  if(loc_prev_time_ms != loc_time_ms)
+  loc_adc_val = adc_GetValue(&hadc1);
+
+  if(loc_adc_val != loc_prev_adc_val)
   {
-    sprintf(loc_buff,"ms=%d sec=%d\n\r",loc_time_ms,loc_time_sec);
+    sprintf(loc_buff,"Water Level = %d | ms = %d sec = %d\n\r",loc_adc_val, loc_time_ms,loc_time_sec);
     uart_Printf(&huart1,loc_buff);
     loc_prev_time_ms = loc_time_ms;
   }
@@ -53,7 +56,7 @@ void main_usercode(void)
     HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
-  //loc_adc_val = adc_GetValue(&hadc1);
+
   button_Processing();
   loc_B_button_state = button_GetButtonState('B',6);
   if(loc_B_button_state != 0)
