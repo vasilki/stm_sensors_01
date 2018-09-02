@@ -5,6 +5,7 @@
 #include "button_handle.h"
 #include "timers.h"
 #include "uart.h"
+#include "LED.h"
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
 extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
@@ -31,31 +32,37 @@ void main_usercode(void)
   loc_time_ms = tim_GetTimeFromStartMS();
   loc_time_sec = tim_GetTimeFromStartSEC();
 
-
-  /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
-  HAL_Delay(300);*/
-  loc_adc_val = adc_GetValue(&hadc1);
-
-  if(loc_adc_val != loc_prev_adc_val)
+  if((loc_time_sec % 2) == 0)
   {
-    sprintf(loc_buff,"Water Level = %d | ms = %d sec = %d\n\r",loc_adc_val, loc_time_ms,loc_time_sec);
-    uart_Printf(&huart1,loc_buff);
-    loc_prev_time_ms = loc_time_ms;
+    loc_adc_val = adc_GetValue(&hadc1);
+    if((loc_adc_val / 250) > 0)
+    {
+      led_set_onboard_LED_blinking_period(1000 / (loc_adc_val / 250));
+    }
+    else
+    {
+      led_set_onboard_LED_blinking_period(1000);
+    }
   }
   else
   {
     /*nothing to do*/
   }
 
-  if((loc_time_sec % 2) == 0)
+
+  if(loc_adc_val != loc_prev_adc_val)
   {
-    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
+   snprintf(loc_buff,sizeof(loc_buff),"Water Level = %d | sec = %d\n\r",loc_adc_val,loc_time_sec);
+   uart_Printf(&huart1,loc_buff);
+   loc_prev_adc_val = loc_adc_val;
+   // loc_prev_time_ms = loc_time_ms;
   }
   else
   {
-    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
+    /*nothing to do*/
   }
 
+  led_onboard_LED_blink();
 
   button_Processing();
   loc_B_button_state = button_GetButtonState('B',6);
@@ -72,6 +79,8 @@ void main_usercode(void)
   return;
 }
 
+
+
 void main_Init()
 {
   static uint8_t loc_B_IsFirstTime = 0;
@@ -84,6 +93,7 @@ void main_Init()
     tim_StartTimer(&htim10);
     uart_Init(&huart1);
     uart_PrintfBuildVersion(&huart1);
+    led_set_onboard_LED_blinking_period(1000);
     
     loc_B_IsFirstTime = 1;
   }

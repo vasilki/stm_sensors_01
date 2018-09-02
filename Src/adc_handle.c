@@ -34,3 +34,10 @@ unsigned int adc_GetValue(ADC_HandleTypeDef *par_hadc)
 
   return loc_return;
 }
+
+
+unsigned int adc_GetNormalizeValue(ADC_HandleTypeDef *par_hadc, unsigned int par_coeff)
+{
+
+  return (adc_GetValue(par_hadc) / par_coeff);
+}
