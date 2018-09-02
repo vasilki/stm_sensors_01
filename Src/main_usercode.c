@@ -16,7 +16,7 @@ void main_Init();
 
 void main_usercode(void)
 {
-  unsigned int loc_adc_val=0;
+  static unsigned int loc_adc_val=0;
   static unsigned int loc_prev_adc_val = 0xFFFFFFFF;
   unsigned char loc_B_button_state = 0;
   uint8_t loc_buff[200];
@@ -24,6 +24,7 @@ void main_usercode(void)
   unsigned int loc_time_ms;
   unsigned int loc_time_sec;
   static unsigned int loc_prev_time_ms=0;
+  static unsigned int loc_prev_time_sec=0;
 
   main_Init();
   
@@ -32,7 +33,7 @@ void main_usercode(void)
   loc_time_ms = tim_GetTimeFromStartMS();
   loc_time_sec = tim_GetTimeFromStartSEC();
 
-  if((loc_time_sec % 2) == 0)
+  if(loc_prev_time_sec != loc_time_sec)
   {
     loc_adc_val = adc_GetValue(&hadc1);
     if((loc_adc_val / 250) > 0)
@@ -75,6 +76,9 @@ void main_usercode(void)
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
+
+
+  loc_prev_time_sec = loc_time_sec;
 
   return;
 }
