@@ -11,6 +11,7 @@ extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 
+void main_Init();
 
 void main_usercode(void)
 {
@@ -22,22 +23,12 @@ void main_usercode(void)
   unsigned int loc_time_sec;
   static unsigned int loc_prev_time_ms=0;
 
+  main_Init();
+  
   tim_UpdatePeriod();
   loc_time = tim_GetPeriod();
   loc_time_ms = tim_GetTimeFromStartMS();
   loc_time_sec = tim_GetTimeFromStartSEC();
-
-  if(loc_time == 1)
-  {
-    button_SetActiveButtons('C',13);
-    button_SetActiveButtons('B',6);
-    tim_StartTimer(&htim9);
-    tim_StartTimer(&htim10);
-  }
-  else
-  {
-    /*nothing to do*/
-  }
 
 
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
@@ -77,4 +68,36 @@ void main_usercode(void)
 
   return;
 }
+
+void main_Init()
+{
+  static uint8_t loc_B_IsFirstTime = 0;
+  
+  if(loc_B_IsFirstTime == 0)
+  {
+    button_SetActiveButtons('C',13);
+    button_SetActiveButtons('B',6);
+    tim_StartTimer(&htim9);
+    tim_StartTimer(&htim10);
+    uart_Init(&huart1);
+    uart_PrintfBuildVersion(&huart1);
+    
+    loc_B_IsFirstTime = 1;
+  }
+  else
+  {
+    /*nothing to do*/
+  }
+  
+  return;
+}
+
+
+
+
+
+
+
+
+
 
