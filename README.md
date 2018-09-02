@@ -6,7 +6,7 @@ PA0 (CN7.28) = S
 GND = GND
 
 Water level is printed trough UART in case of change.
-
+OnboardLED is blinking on period depending of water level.
 
 ---------------
 
