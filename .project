@@ -28,35 +28,65 @@
 		<link>
 			<name>mylibs</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs</locationURI>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>mylibs/adc</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/adc</locationURI>
+		</link>
+		<link>
+			<name>mylibs/button</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/button</locationURI>
+		</link>
+		<link>
+			<name>mylibs/dwt_stm32_delay</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/dwt_stm32_delay</locationURI>
+		</link>
+		<link>
+			<name>mylibs/led</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/led</locationURI>
+		</link>
+		<link>
+			<name>mylibs/timers</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/timers</locationURI>
+		</link>
+		<link>
+			<name>mylibs/uart</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/uart</locationURI>
 		</link>
 	</linkedResources>
 	<filteredResources>
 		<filter>
-			<id>1536344841037</id>
+			<id>1537118099049</id>
 			<name>mylibs</name>
-			<type>30</type>
+			<type>22</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-CodeBlocksTestProject</arguments>
 			</matcher>
 		</filter>
 		<filter>
-			<id>1536344841045</id>
+			<id>1537118099087</id>
 			<name>mylibs</name>
 			<type>6</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-true-false-README.md</arguments>
+				<arguments>1.0-name-matches-false-false-.*</arguments>
 			</matcher>
 		</filter>
 		<filter>
-			<id>1536344841060</id>
+			<id>1537118099131</id>
 			<name>mylibs</name>
-			<type>30</type>
+			<type>6</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-.*</arguments>
+				<arguments>1.0-name-matches-false-false-README.md</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>
