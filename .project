@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>stm_sensors_01</name>
-	<comment></comment>
+	<comment />
 	<projects>
 	</projects>
 	<buildSpec>
@@ -33,32 +33,32 @@
 		<link>
 			<name>mylibs/adc</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/adc</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/adc</location>
 		</link>
 		<link>
 			<name>mylibs/button</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/button</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/button</location>
 		</link>
 		<link>
 			<name>mylibs/dwt_stm32_delay</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/dwt_stm32_delay</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/dwt_stm32_delay</location>
 		</link>
 		<link>
 			<name>mylibs/led</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/led</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/led</location>
 		</link>
 		<link>
 			<name>mylibs/timers</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/timers</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/timers</location>
 		</link>
 		<link>
 			<name>mylibs/uart</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/uart</locationURI>
+			<location>$%7BPARENT-1-PROJECT_LOC%7D/stm_mylibs/uart</location>
 		</link>
 	</linkedResources>
 	<filteredResources>

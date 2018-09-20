@@ -1,13 +1,11 @@
 #include "stm32f4xx_hal.h"
 #include <string.h>
 #include <stdio.h>
-#include "adc.h"
 #include "button_handle.h"
 #include "timers.h"
 #include "uart.h"
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
-extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 
@@ -21,6 +19,7 @@ void main_usercode(void)
   unsigned int loc_time;
   unsigned int loc_time_ms;
   unsigned int loc_time_sec;
+  static unsigned int loc_prev_time_sec = 0;
   static unsigned int loc_prev_time_ms=0;
 
   main_Init();
@@ -33,11 +32,10 @@ void main_usercode(void)
 
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
   HAL_Delay(300);*/
-  if(loc_prev_time_ms != loc_time_ms)
+  if(loc_prev_time_sec != loc_time_sec)
   {
-    sprintf((char*)loc_buff,"ms=%d sec=%d\n\r",loc_time_ms,loc_time_sec);
+    sprintf((char*)loc_buff,"sec=%d\n\r",loc_time_sec);
     uart_Printf(&huart1,loc_buff);
-    loc_prev_time_ms = loc_time_ms;
   }
   else
   {
@@ -53,18 +51,7 @@ void main_usercode(void)
     HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
-  //loc_adc_val = adc_GetValue(&hadc1);
-  button_Processing();
-  loc_B_button_state = button_GetButtonState('B',6);
-  if(loc_B_button_state != 0)
-  {
-    HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_SET);
-  }
-  else
-  {
-    HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_RESET);
-  }
-
+  loc_prev_time_sec = loc_time_sec;
 
   return;
 }
