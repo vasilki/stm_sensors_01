@@ -133,6 +133,18 @@ static void main_experiments_with_ds18b20(void)
     {
       /*nothing to do*/
     }
+    sprintf((char*)loc_buff,"scratchpad:%02x %02x %02x %02x %02x %02x %02x %02x %02x\n\r",
+        loc_scratchpad[0],
+        loc_scratchpad[1],
+        loc_scratchpad[2],
+        loc_scratchpad[3],
+        loc_scratchpad[4],
+        loc_scratchpad[5],
+        loc_scratchpad[6],
+        loc_scratchpad[7],
+        loc_scratchpad[8]);
+    uart_Printf(&huart1,loc_buff);
+
     sprintf((char*)loc_buff,"crc is ok= %d temperature = %f\n\r", loc_status, loc_temperature);
     uart_Printf(&huart1,loc_buff);
   }
