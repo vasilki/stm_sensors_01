@@ -133,7 +133,7 @@ static void main_experiments_with_ds18b20(void)
     {
       /*nothing to do*/
     }
-    sprintf((char*)loc_buff,"crc is ok=%d temperature = %f\n\r", loc_status, loc_temperature);
+    sprintf((char*)loc_buff,"crc is ok= %d temperature = %f\n\r", loc_status, loc_temperature);
     uart_Printf(&huart1,loc_buff);
   }
   else
