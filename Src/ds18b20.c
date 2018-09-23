@@ -32,12 +32,14 @@
 #define K_TH_REGISTER 100 /*High temperature limit 100 degree celsius*/
 #define K_TL_REGISTER 20 /*Low temperature limit 20 degree celsius*/
 
-#define K_T_CONV 800000 /*800000us (800 ms) base time for temperature's conersion*/
+#define K_T_CONV (uint32_t)800000 /*800000us (800 ms) base time for temperature's conersion*/
 #define K_T_CONV_RESOLUTION_12BIT  K_T_CONV
 #define K_T_CONV_RESOLUTION_11BIT (K_T_CONV / 2)
 #define K_T_CONV_RESOLUTION_10BIT (K_T_CONV / 4)
 #define K_T_CONV_RESOLUTION_9BIT  (K_T_CONV / 8)
 
+  
+#define K_CRC8_DS_INIT 0x00 /*CRC8 Dallas (021cb801000000a2=0x00)*/
 
 static GPIO_TypeDef *GL_GPIOx = (GPIO_TypeDef*)0;
 static uint16_t GL_GPIO_PIN = 0;
@@ -47,14 +49,12 @@ static uint8_t GL_T_CONV = K_T_CONV_RESOLUTION_12BIT;
 
 
 static void ds18b20_GPIO_Init(uint32_t par_GPIO_MODE, GPIO_TypeDef *par_GPIOx, uint16_t par_GPIO_Pin);
-uint8_t ds18b20_Reset(void);
+static uint8_t ds18b20_Reset(void);
 static uint8_t ds18b20_ReadBit(void);
-uint8_t ds18b20_ReadByte(void);
+static uint8_t ds18b20_ReadByte(void);
 static void ds18b20_WriteBit(uint8_t par_bit);
-void ds18b20_WriteByte(uint8_t par_byte);
-void ds18b20_RequestMeasureTemperature(uint8_t par_mode, uint8_t par_sensor_index);
-
-
+static void ds18b20_WriteByte(uint8_t par_byte);
+static uint8_t ds18b20_CalculateCRC8(const uint8_t *par_data, unsigned int par_length);
 
 static void ds18b20_GPIO_Init(uint32_t par_GPIO_MODE, GPIO_TypeDef *par_GPIOx, uint16_t par_GPIO_Pin)
 {
@@ -130,7 +130,7 @@ static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
 }
 
 /*return 1 in case of ds18b20 is online, 0 otherwise*/
-uint8_t ds18b20_Reset(void)
+static uint8_t ds18b20_Reset(void)
 {
   uint8_t loc_status;
 
@@ -176,7 +176,7 @@ uint8_t ds18b20_Init(GPIO_TypeDef* par_GPIOx, uint16_t par_GPIO_Pin, uint8_t par
     case K_RESOLUTION_11BIT:
       GL_T_CONV = K_T_CONV_RESOLUTION_11BIT;
       break;
-    case K_RESOLUTION_11BIT:
+    case K_RESOLUTION_12BIT:
       GL_T_CONV = K_T_CONV_RESOLUTION_12BIT;
       break;
     default:
@@ -231,7 +231,7 @@ static uint8_t ds18b20_ReadBit(void)
   return loc_bit;
 }
 
-uint8_t ds18b20_ReadByte(void)
+static uint8_t ds18b20_ReadByte(void)
 {
   uint8_t loc_byte = 0;
   uint32_t loc_i;
@@ -274,7 +274,7 @@ static void ds18b20_WriteBit(uint8_t par_bit)
   return;
 }
 
-void ds18b20_WriteByte(uint8_t par_byte)
+static void ds18b20_WriteByte(uint8_t par_byte)
 {
   uint32_t loc_i;
 
@@ -321,7 +321,7 @@ void ds18b20_RequestMeasureTemperature(uint8_t par_mode, uint8_t par_sensor_inde
   return;
 }
 
-void ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_sensor_index)
+uint8_t ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_sensor_index)
 {
   uint32_t loc_i;
   uint8_t loc_status;
@@ -335,7 +335,8 @@ void ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_sen
       {
         ds18b20_WriteByte(K_SKIP_ROM);
         ds18b20_WriteByte(K_READ_SCRATCHPAD);
-        for(loc_i = 0;loc_i < 8; loc_i++)
+        /*8 byte data and 1 byte CRC8*/
+        for(loc_i = 0;loc_i < 9; loc_i++)
         {
           par_data[loc_i] = ds18b20_ReadByte();
         }
@@ -355,5 +356,109 @@ void ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_sen
     /*nothing to do*/
   }
     
-  return;
+  return loc_status;
 }
+
+/*  Poly  : 0x8C    x^8 + x^5 + x^4 + 1 */
+static uint8_t ds18b20_CalculateCRC8(const uint8_t *par_data, unsigned int par_length)
+{
+  uint8_t loc_crc8 = 0;
+  uint32_t loc_j = 0;
+  uint32_t loc_i;
+  uint8_t loc_data;
+  uint8_t loc_byte;
+  
+  while ((loc_j < par_length) && (par_data != 0))
+  {
+    loc_data = par_data[loc_j];
+
+    for (loc_i = 0; loc_i < sizeof(uint8_t); loc_i++)
+    {
+      loc_byte = (loc_crc8 ^ loc_data) & 0x1;
+      loc_crc8 = loc_crc8 >> 0x1;
+      loc_data = loc_data >> 0x1;
+      if(loc_byte == 1)
+      {
+        loc_crc8 = loc_crc8 & 0x8C;
+      }
+      else
+      {
+        /*nothing to do*/
+      }
+    }
+    loc_j++;
+  }
+  
+  return loc_crc8;
+}
+
+uint8_t ds18b20_CheckCRC8(const uint8_t *par_scratchpad, unsigned int par_length)
+{
+  uint8_t loc_ok = 0;
+
+  /*8 bytes of data from scracthpad + 1 byte of crc8 from scratchpad*/
+  if((par_scratchpad != 0) && (par_length == 9))
+  {
+    loc_ok = ds18b20_CalculateCRC8(par_scratchpad, par_length - 1);
+    loc_ok = (loc_ok == par_scratchpad[8]);
+  }
+  else
+  {
+    /*nothing to do*/
+  }
+
+  return loc_ok;
+}
+
+float ds18b20_DecodeTemperature(const uint8_t *par_scratchpad)
+{
+  float loc_temperature;
+  int32_t loc_int;
+  uint8_t loc_sign;
+  
+  if(par_scratchpad != 0)
+  {
+    switch(GL_RESOLUTION)
+    {
+      case K_RESOLUTION_9BIT:
+        /*for 9bit resolutions bits 0-2 are not defined*/
+        loc_temperature = ((par_scratchpad[0] >> 3) & 0x1) * 0.5;
+        break;
+      case K_RESOLUTION_10BIT:
+        /*for 10bit resolutions bits 0-1 are not defined*/
+        loc_temperature = ((par_scratchpad[0] >> 2) & 0x3) * 0.25;
+        break;
+      case K_RESOLUTION_11BIT:
+        /*for 11bit resolutions bit 0 is not defined*/
+        loc_temperature = ((par_scratchpad[0] >> 1) & 0x7) * 0.125;
+        break;
+      case K_RESOLUTION_12BIT:
+        /*for 12bit resolutions*/
+        loc_temperature = (par_scratchpad[0] & 0xF) * 0.0625;
+        break;
+      default:
+        /*for 12bit resolutions*/
+        loc_temperature = (par_scratchpad[0] & 0xF) * 0.0625;
+        break;
+    }
+    loc_int = ((par_scratchpad[0] >> 4) & 0xF) | ((par_scratchpad[1] & 0x7) << 4);
+    loc_temperature = loc_temperature + loc_int;
+    
+    loc_sign = (((par_scratchpad[1] >> 3) & 0x1F) != 0);
+    if(loc_sign != 0)
+    {
+      loc_temperature *= (-1);
+    }
+    else
+    {
+      /*nothing to do*/
+    }
+  }
+  else
+  {
+    loc_temperature = 0.0;
+  }
+  
+  return loc_temperature;
+}
+

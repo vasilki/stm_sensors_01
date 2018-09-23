@@ -1,0 +1,72 @@
+base example: https://pdfserv.maximintegrated.com/en/an/AN27.pdf
+
+
+
+https://goo.gl/ibwZay
+
+/*
+  Name  : CRC-8
+  Poly  : 0x31    x^8 + x^5 + x^4 + 1
+  Init  : 0xFF
+  Revert: false
+  XorOut: 0x00
+  Check : 0xF7 ("123456789")
+  MaxLen: 15 байт(127 бит) - обнаружение
+    одинарных, двойных, тройных и всех нечетных ошибок
+*/
+unsigned char Crc8(unsigned char *pcBlock, unsigned int len)
+{
+    unsigned char crc = 0xFF;
+    unsigned int i;
+
+    while (len--)
+    {
+        crc ^= *pcBlock++;
+
+        for (i = 0; i < 8; i++)
+            crc = crc & 0x80 ? (crc << 1) ^ 0x31 : crc << 1;
+    }
+
+    return crc;
+}
+
+https://goo.gl/SuGuor
+
+unsigned char fnCalcCrc(unsigned char *mas, unsigned char lenght)
+{
+unsigned char i,data,crc,fb,st_byt;
+st_byt=0;
+crc=0;
+do{
+ data=mas[st_byt];
+ for (i=0;i<8;i++)// счетчик битов в байте
+ {
+ 	fb =crc  ^ data;
+ 	fb&=1;
+ 	crc >>= 1;
+ 	data >>=1;
+ 	if (fb == 1)crc^=0x8c;// полином,
+ }
+ st_byt++;
+}while  (st_byt != lenght);// счетчик байтов в массиве
+return crc;
+}
+
+
+https://www.radiokot.ru/forum/viewtopic.php?p=1478764
+
+// CRC8 Dallas (021cb801000000a2=0x00)
+#define CRC8_DS_INIT 0x00
+U8 crc8_ds_upd(U8 data, U8 crc_prev) {
+    data ^= crc_prev;
+    crc_prev = 0;
+    if(data & 0x01) crc_prev = 0x5e;
+    if(data & 0x02) crc_prev ^= 0xbc;
+    if(data & 0x04) crc_prev ^= 0x61;
+    if(data & 0x08) crc_prev ^= 0xc2;
+    if(data & 0x10) crc_prev ^= 0x9d;
+    if(data & 0x20) crc_prev ^= 0x23;
+    if(data & 0x40) crc_prev ^= 0x46;
+    if(data & 0x80) crc_prev ^= 0x8c;
+    return crc_prev;
+}
