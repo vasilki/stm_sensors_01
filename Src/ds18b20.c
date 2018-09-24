@@ -8,21 +8,24 @@
 #include "dwt_stm32_delay.h"
 #include "string.h"
 #include "ds18b20.h"
+#include "uart.h"
 
 
 #define K_STEP_5us 5 /*step of checking confirmation (us)*/
 
-#define K_SEARCH_ROM 0xF0 /*command search ROM*/
-#define K_READ_ROM 0x33 /*command read ROM*/
-#define K_MATCH_ROM 0x55 /*command match ROM*/
-#define K_SKIP_ROM 0xCC /*command skip ROM*/
-#define K_ALARM_SEARCH 0xEC /*command alarm search*/
-#define K_CONVERT_TEMPERATURE 0x44 /*command convert temperature*/
-#define K_WRITE_SCRACTCHPAD 0x4E /*command write into ROM (non volatile memory)*/
-#define K_COPY_SCRATCHPAD 0x48 /*command copy data from RAM into ROM*/
-#define K_READ_SCRATCHPAD 0xBE /*command read memory*/
-#define K_RECALL_E2 0xB8 /*command reload TH,TL and config data from ROM*/
-#define K_READ_POWER_SUPPLY 0xB4 /*command check type of power supply (external or "parasite")*/
+enum DS18B20_COMMANDS {
+  K_READ_ROM = 0x33, /*command read ROM*/
+  K_CONVERT_TEMPERATURE = 0x44, /*command convert temperature*/
+  K_COPY_SCRATCHPAD = 0x48, /*command copy data from RAM into ROM*/
+  K_WRITE_SCRACTCHPAD = 0x4E, /*command write into ROM (non volatile memory)*/
+  K_MATCH_ROM = 0x55, /*command match ROM*/
+  K_READ_POWER_SUPPLY = 0xB4, /*command check type of power supply (external or "parasite")*/
+  K_RECALL_E2 = 0xB8, /*command reload TH,TL and configuration data from ROM*/
+  K_READ_SCRATCHPAD = 0xBE, /*command read memory*/
+  K_SKIP_ROM = 0xCC, /*command skip ROM*/
+  K_ALARM_SEARCH = 0xEC, /*command alarm search*/
+  K_SEARCH_ROM = 0xF0 /*command search ROM*/
+};
 
 #define K_RESOLUTION_9BIT 0x1F
 #define K_RESOLUTION_10BIT (0x1F | (1 << 5))
@@ -38,13 +41,12 @@
 #define K_T_CONV_RESOLUTION_10BIT (K_T_CONV / 4)
 #define K_T_CONV_RESOLUTION_9BIT  (K_T_CONV / 8)
 
-  
-#define K_CRC8_DS_INIT 0x00 /*CRC8 Dallas (021cb801000000a2=0x00)*/
+#define K_CRC8_DS_INIT 0x00 /*CRC8 Dallas 0x00*/
 
 static GPIO_TypeDef *GL_GPIOx = (GPIO_TypeDef*)0;
 static uint16_t GL_GPIO_PIN = 0;
 static uint8_t GL_RESOLUTION = K_RESOLUTION_12BIT;
-static uint8_t GL_T_CONV = K_T_CONV_RESOLUTION_12BIT;
+static uint32_t GL_T_CONV = K_T_CONV_RESOLUTION_12BIT;
 
 
 
@@ -91,7 +93,7 @@ static void ds18b20_GPIO_Init(uint32_t par_GPIO_MODE, GPIO_TypeDef *par_GPIOx, u
   return;
 }
 
-
+uint32_t gl_conf = 0;
 static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
                                                 uint32_t par_confirmation_time_us,
                                                 uint32_t par_time_slot_limit_us)
@@ -126,6 +128,7 @@ static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
     DWT_Delay_us(K_STEP_5us);
   }
 
+  gl_conf = loc_confirmation_max_us;
   return (loc_confirmation_max_us >= par_confirmation_time_us);
 }
 
@@ -140,12 +143,10 @@ static uint8_t ds18b20_Reset(void)
   HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
   /*Delay >=480 us Reset Pulse from MCU. +5us spare*/
   DWT_Delay_us(485);
-  /*Set high level on 1-wire line*/
-  HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_SET);
-  /*Delay 15-60 us: answer from DS18B20. +5us spare*/
-  DWT_Delay_us(65);
   /*Initialize input GPIO - release 1-wire line*/
   ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
+  /*Delay 15-60 us: answer from DS18B20. +5us spare*/
+  DWT_Delay_us(65);
   /*Read answer during 480-60 us and count answer's confirmation*/
   loc_status = ds18b20_CheckBitWithConfirmation(0,60,420);
   /*Delay 20 us*/
@@ -217,12 +218,12 @@ static uint8_t ds18b20_ReadBit(void)
   ds18b20_GPIO_Init(GPIO_MODE_OUTPUT_OD,GL_GPIOx,GL_GPIO_PIN);
   /*Set low level on 1-wire line*/
   HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
-  /*Delay 1 us Master read from MCU. +1us spare*/
-  DWT_Delay_us(2);
+  /*Delay 1 us Master read from MCU. +2us spare*/
+  DWT_Delay_us(3);
   /*Initialize input GPIO*/
   ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
-  /*Delay 15 us Master read from DS18B20*/
-  DWT_Delay_us(15);
+  /*Delay 15 us Master read from DS18B20. +3us spare*/
+  DWT_Delay_us(18);
   /*Read bit*/
   loc_bit = (HAL_GPIO_ReadPin(GL_GPIOx, GL_GPIO_PIN) == GPIO_PIN_SET);
   /*Delay for next bit*/
@@ -252,8 +253,8 @@ static void ds18b20_WriteBit(uint8_t par_bit)
   {
     /*Set low level on 1-wire line*/
     HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
-    /*Delay > 60 us Master write 0 from MCU. +10us spare*/
-    DWT_Delay_us(70); 
+    /*Delay 60 < delay < 120 us Master write 0 from MCU*/
+    DWT_Delay_us(90); 
     /*Initialize input GPIO - release 1-wire line*/
     ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
   }
@@ -327,7 +328,7 @@ uint8_t ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_
   uint8_t loc_status;
   
   loc_status = ds18b20_Reset();
-  if((loc_status != 0)  && (par_data != 0))
+  if((loc_status != 0) && (par_data != 0))
   {
     if(par_sensor_index == 0)
     {
@@ -336,7 +337,7 @@ uint8_t ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_
         ds18b20_WriteByte(K_SKIP_ROM);
         ds18b20_WriteByte(K_READ_SCRATCHPAD);
         /*8 byte data and 1 byte CRC8*/
-        for(loc_i = 0;loc_i < 9; loc_i++)
+        for(loc_i = 0;loc_i < K_SCRATCHPAD_LENGTH; loc_i++)
         {
           par_data[loc_i] = ds18b20_ReadByte();
         }
@@ -362,7 +363,7 @@ uint8_t ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_
 /*  Poly  : 0x8C    x^8 + x^5 + x^4 + 1 */
 static uint8_t ds18b20_CalculateCRC8(const uint8_t *par_data, unsigned int par_length)
 {
-  uint8_t loc_crc8 = 0;
+  uint8_t loc_crc8 = K_CRC8_DS_INIT;
   uint32_t loc_j = 0;
   uint32_t loc_i;
   uint8_t loc_data;
@@ -397,10 +398,10 @@ uint8_t ds18b20_CheckCRC8(const uint8_t *par_scratchpad, unsigned int par_length
   uint8_t loc_ok = 0;
 
   /*8 bytes of data from scracthpad + 1 byte of crc8 from scratchpad*/
-  if((par_scratchpad != 0) && (par_length == 9))
+  if((par_scratchpad != 0) && (par_length == K_SCRATCHPAD_LENGTH))
   {
-    loc_ok = ds18b20_CalculateCRC8(par_scratchpad, par_length - 1);
-    loc_ok = (loc_ok == par_scratchpad[8]);
+    loc_ok = ds18b20_CalculateCRC8(par_scratchpad, K_SCRATCHPAD_LENGTH - 1);
+    loc_ok = (loc_ok == par_scratchpad[K_SCRATCHPAD_LENGTH - 1]);
   }
   else
   {

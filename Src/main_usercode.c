@@ -121,7 +121,7 @@ static void main_experiments_with_ds18b20(void)
   uint8_t loc_buff[200];
   
   ds18b20_RequestMeasureTemperature(K_ONE_SENSOR_ON_LINE, 0);
-  loc_status = ds18b20_ReadScratchpad(K_ONE_SENSOR_ON_LINE, loc_scratchpad, sizeof(loc_scratchpad));
+  loc_status = ds18b20_ReadScratchpad(K_ONE_SENSOR_ON_LINE, loc_scratchpad, 0);
   if(loc_status != 0)
   {
     loc_status = ds18b20_CheckCRC8(loc_scratchpad, sizeof(loc_scratchpad));
@@ -133,7 +133,7 @@ static void main_experiments_with_ds18b20(void)
     {
       /*nothing to do*/
     }
-    sprintf((char*)loc_buff,"scratchpad:%02x %02x %02x %02x %02x %02x %02x %02x %02x\n\r",
+    sprintf((char*)loc_buff,"\r\nscratchpad:%02x %02x %02x %02x %02x %02x %02x %02x %02x\n\r",
         loc_scratchpad[0],
         loc_scratchpad[1],
         loc_scratchpad[2],
