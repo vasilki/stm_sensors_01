@@ -27,19 +27,21 @@ enum DS18B20_COMMANDS {
   K_SEARCH_ROM = 0xF0 /*command search ROM*/
 };
 
-#define K_RESOLUTION_9BIT 0x1F
-#define K_RESOLUTION_10BIT (0x1F | (1 << 5))
-#define K_RESOLUTION_11BIT (0x1F | (1 << 6))
-#define K_RESOLUTION_12BIT (K_RESOLUTION_10BIT | K_RESOLUTION_11BIT)
+enum DS18B20_RESOLUTIONS {
+  K_RESOLUTION_9BIT = 0x1F,
+  K_RESOLUTION_10BIT = (0x1F | (1 << 5)),
+  K_RESOLUTION_11BIT = (0x1F | (1 << 6)),
+  K_RESOLUTION_12BIT = (K_RESOLUTION_10BIT | K_RESOLUTION_11BIT)
+};
+enum DS18B20_T_CONV {
+  K_T_CONV_RESOLUTION_9BIT = (800000 / 8),
+  K_T_CONV_RESOLUTION_10BIT = (800000 / 4),
+  K_T_CONV_RESOLUTION_11BIT = (800000 / 2),
+  K_T_CONV_RESOLUTION_12BIT = 800000, /*800000us (800 ms) base time for temperature's conversion*/
+};
 
 #define K_TH_REGISTER 100 /*High temperature limit 100 degree celsius*/
 #define K_TL_REGISTER 20 /*Low temperature limit 20 degree celsius*/
-
-#define K_T_CONV (uint32_t)800000 /*800000us (800 ms) base time for temperature's conersion*/
-#define K_T_CONV_RESOLUTION_12BIT  K_T_CONV
-#define K_T_CONV_RESOLUTION_11BIT (K_T_CONV / 2)
-#define K_T_CONV_RESOLUTION_10BIT (K_T_CONV / 4)
-#define K_T_CONV_RESOLUTION_9BIT  (K_T_CONV / 8)
 
 #define K_CRC8_DS_INIT 0x00 /*CRC8 Dallas 0x00*/
 
@@ -93,7 +95,6 @@ static void ds18b20_GPIO_Init(uint32_t par_GPIO_MODE, GPIO_TypeDef *par_GPIOx, u
   return;
 }
 
-uint32_t gl_conf = 0;
 static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
                                                 uint32_t par_confirmation_time_us,
                                                 uint32_t par_time_slot_limit_us)
@@ -108,7 +109,7 @@ static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
   /*Read answer during confirmation time us and count answer's confirmation*/
   for(loc_i = 0; loc_i < par_time_slot_limit_us; loc_i += K_STEP_5us)
   {
-    loc_bit = (HAL_GPIO_ReadPin(GL_GPIOx, GL_GPIO_PIN) == GPIO_PIN_SET);
+    loc_bit = (HAL_GPIO_ReadPin(GL_GPIOx, GL_GPIO_PIN) == GPIO_PIN_RESET);
     if(loc_bit == par_bit)
     {
       loc_confirmation_us += K_STEP_5us;
@@ -128,7 +129,6 @@ static uint8_t ds18b20_CheckBitWithConfirmation(uint8_t par_bit,
     DWT_Delay_us(K_STEP_5us);
   }
 
-  gl_conf = loc_confirmation_max_us;
   return (loc_confirmation_max_us >= par_confirmation_time_us);
 }
 
@@ -142,18 +142,18 @@ static uint8_t ds18b20_Reset(void)
   /*Set low level on 1-wire line*/
   HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
   /*Delay >=480 us Reset Pulse from MCU. +5us spare*/
-  DWT_Delay_us(485);
+  DWT_Delay_us(500);
   /*Initialize input GPIO - release 1-wire line*/
   ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
   /*Delay 15-60 us: answer from DS18B20. +5us spare*/
   DWT_Delay_us(65);
-  /*Read answer during 480-60 us and count answer's confirmation*/
+  /*Read answer during 480-60 us and count answer's confirmation (wait PRESENCE)*/
   loc_status = ds18b20_CheckBitWithConfirmation(0,60,420);
   /*Delay 20 us*/
   DWT_Delay_us(20);
 
   /*confirmation greater than 60us or equal 60us zero-answer from DS18B20*/
-  return (loc_status == 0);
+  return loc_status;
 }
 
 
@@ -249,28 +249,26 @@ static void ds18b20_WriteBit(uint8_t par_bit)
 {
   /*Initialize output GPIO*/
   ds18b20_GPIO_Init(GPIO_MODE_OUTPUT_OD,GL_GPIOx,GL_GPIO_PIN);
+  /*Set low level on 1-wire line*/
+  HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
   if(par_bit == 0)
   {
-    /*Set low level on 1-wire line*/
-    HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
     /*Delay 60 < delay < 120 us Master write 0 from MCU*/
-    DWT_Delay_us(90); 
+    DWT_Delay_us(70);
     /*Initialize input GPIO - release 1-wire line*/
     ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
   }
   else
   {
-    /*Set low level on 1-wire line*/
-    HAL_GPIO_WritePin(GL_GPIOx, GL_GPIO_PIN, GPIO_PIN_RESET);
     /*Delay < 15 us Master write 0 from MCU*/
-    DWT_Delay_us(15/2);    
+    DWT_Delay_us(10);
     /*Initialize input GPIO - release 1-wire line*/
     ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
     /*Delay 15/2 + 60 for processing "1" by DS18B20. +5us spare*/
-    DWT_Delay_us(15/2 + 65);
+    DWT_Delay_us(10 + 65);
   }
-  /*Relocation Delay 1. +2us spare*/
-  DWT_Delay_us(3); 
+  /*Relocation Delay 1. +4us spare*/
+  DWT_Delay_us(5);
 
   return;
 }

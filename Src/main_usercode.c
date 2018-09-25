@@ -106,9 +106,10 @@ static void main_Init()
 
 static void main_sensors_init(void)
 {
+  uint8_t loc_status;
   /*DS18B20 init*/
-  ds18b20_Init(GPIOB, GPIO_PIN_5, K_ONE_SENSOR_ON_LINE);
-      
+  loc_status = ds18b20_Init(GPIOB, GPIO_PIN_5, K_ONE_SENSOR_ON_LINE);
+
   return;
 }
 
@@ -120,6 +121,7 @@ static void main_experiments_with_ds18b20(void)
   float loc_temperature = 0.0;
   uint8_t loc_buff[200];
   
+  return;
   ds18b20_RequestMeasureTemperature(K_ONE_SENSOR_ON_LINE, 0);
   loc_status = ds18b20_ReadScratchpad(K_ONE_SENSOR_ON_LINE, loc_scratchpad, 0);
   if(loc_status != 0)
