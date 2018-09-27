@@ -45,6 +45,8 @@ enum DS18B20_T_CONV {
 
 #define K_CRC8_DS_INIT 0x00 /*CRC8 Dallas 0x00*/
 
+#define K_BITS_IN_BYTE 8
+
 static GPIO_TypeDef *GL_GPIOx = (GPIO_TypeDef*)0;
 static uint16_t GL_GPIO_PIN = 0;
 static uint8_t GL_RESOLUTION = K_RESOLUTION_12BIT;
@@ -76,7 +78,7 @@ static void ds18b20_GPIO_Init(uint32_t par_GPIO_MODE, GPIO_TypeDef *par_GPIOx, u
     }
     else if(par_GPIO_MODE == GPIO_MODE_INPUT)
     {
-      HAL_GPIO_WritePin(par_GPIOx, par_GPIO_Pin, GPIO_PIN_RESET);
+     // HAL_GPIO_WritePin(par_GPIOx, par_GPIO_Pin, GPIO_PIN_RESET);
       loc_GPIO_InitStruct.Pin = par_GPIO_Pin;
       loc_GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
       loc_GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -237,7 +239,7 @@ static uint8_t ds18b20_ReadByte(void)
   uint8_t loc_byte = 0;
   uint32_t loc_i;
 
-  for (loc_i = 0; loc_i < sizeof(uint8_t); loc_i++)
+  for (loc_i = 0; loc_i < K_BITS_IN_BYTE; loc_i++)
   {
     loc_byte = loc_byte | (ds18b20_ReadBit() << loc_i);
   }
@@ -254,20 +256,20 @@ static void ds18b20_WriteBit(uint8_t par_bit)
   if(par_bit == 0)
   {
     /*Delay 60 < delay < 120 us Master write 0 from MCU*/
-    DWT_Delay_us(70);
+    DWT_Delay_us((60+120)/2);
     /*Initialize input GPIO - release 1-wire line*/
     ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
   }
   else
   {
     /*Delay < 15 us Master write 0 from MCU*/
-    DWT_Delay_us(10);
+    DWT_Delay_us(15/2);
     /*Initialize input GPIO - release 1-wire line*/
     ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
     /*Delay 15/2 + 60 for processing "1" by DS18B20. +5us spare*/
-    DWT_Delay_us(10 + 65);
+    DWT_Delay_us(15/2 + 65);
   }
-  /*Relocation Delay 1. +4us spare*/
+  /*Relocation Delay 5*/
   DWT_Delay_us(5);
 
   return;
@@ -277,10 +279,12 @@ static void ds18b20_WriteByte(uint8_t par_byte)
 {
   uint32_t loc_i;
 
-  for (loc_i = 0; loc_i < sizeof(uint8_t); loc_i++)
+  for (loc_i = 0; loc_i < K_BITS_IN_BYTE; loc_i++)
   {
     ds18b20_WriteBit((par_byte >> loc_i) & 0x1);
   }
+  /*Delay 50us between bytes*/
+  DWT_Delay_us(50);
 
   return;
 }
@@ -371,7 +375,7 @@ static uint8_t ds18b20_CalculateCRC8(const uint8_t *par_data, unsigned int par_l
   {
     loc_data = par_data[loc_j];
 
-    for (loc_i = 0; loc_i < sizeof(uint8_t); loc_i++)
+    for (loc_i = 0; loc_i < K_BITS_IN_BYTE; loc_i++)
     {
       loc_byte = (loc_crc8 ^ loc_data) & 0x1;
       loc_crc8 = loc_crc8 >> 0x1;
