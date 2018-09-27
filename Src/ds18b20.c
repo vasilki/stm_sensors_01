@@ -224,15 +224,17 @@ static uint8_t ds18b20_ReadBit(void)
   DWT_Delay_us(3);
   /*Initialize input GPIO*/
   ds18b20_GPIO_Init(GPIO_MODE_INPUT,GL_GPIOx,GL_GPIO_PIN);
-  /*Delay 15 us Master read from DS18B20. +3us spare*/
-  DWT_Delay_us(18);
+  /*Delay 14 us Master read from DS18B20*/
+  DWT_Delay_us(14);
   /*Read bit*/
   loc_bit = (HAL_GPIO_ReadPin(GL_GPIOx, GL_GPIO_PIN) == GPIO_PIN_SET);
   /*Delay for next bit*/
-  DWT_Delay_us(45);
+  DWT_Delay_us(40);
 
   return loc_bit;
 }
+uint8_t gl_bytes[2000]={0};
+uint32_t gl_bytes_num = 0;
 
 static uint8_t ds18b20_ReadByte(void)
 {
@@ -241,7 +243,10 @@ static uint8_t ds18b20_ReadByte(void)
 
   for (loc_i = 0; loc_i < K_BITS_IN_BYTE; loc_i++)
   {
-    loc_byte = loc_byte | (ds18b20_ReadBit() << loc_i);
+    gl_bytes[gl_bytes_num] = ds18b20_ReadBit();
+
+    loc_byte = loc_byte | (gl_bytes[gl_bytes_num] << loc_i);
+    gl_bytes_num++;
   }
 
   return loc_byte;
