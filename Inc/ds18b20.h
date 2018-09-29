@@ -18,7 +18,9 @@
 void ds18b20_RequestMeasureTemperature(uint8_t par_mode, uint8_t par_sensor_index);
 uint8_t ds18b20_ReadScratchpad(uint8_t par_mode, uint8_t *par_data, uint8_t par_sensor_index);
 uint8_t ds18b20_Init(GPIO_TypeDef* par_GPIOx, uint16_t par_GPIO_Pin, uint8_t par_mode);
-uint8_t ds18b20_CheckCRC8(const uint8_t *par_scratchpad, unsigned int par_length);
+uint8_t ds18b20_CheckScratchpad(const uint8_t *par_scratchpad, unsigned int par_length);
 float ds18b20_DecodeTemperature(const uint8_t *par_scratchpad);
+float ds18b20_GetValidatedTemperature(uint8_t par_mode, uint8_t par_sensor_index);
+
 
 #endif /* DS18B20_H_ */

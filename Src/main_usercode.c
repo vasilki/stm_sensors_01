@@ -116,24 +116,30 @@ static void main_sensors_init(void)
 
 static void main_experiments_with_ds18b20(void)
 {
+  float loc_temperature = 0.0;
+  uint8_t loc_buff[200];
+
+  loc_temperature = ds18b20_GetValidatedTemperature(K_ONE_SENSOR_ON_LINE, 0);
+
+  sprintf((char*)loc_buff,"temperature = %f\n\r", loc_temperature);
+  uart_Printf(&huart1,loc_buff);
+
+/*
   uint8_t loc_scratchpad[9]={0};
   uint8_t loc_status;
-  float loc_temperature = 0.0;
-  uint8_t loc_buff[2000];
   
   ds18b20_RequestMeasureTemperature(K_ONE_SENSOR_ON_LINE, 0);
   loc_status = ds18b20_ReadScratchpad(K_ONE_SENSOR_ON_LINE, loc_scratchpad, 0);
   if(loc_status != 0)
   {
-    loc_status = ds18b20_CheckCRC8(loc_scratchpad, sizeof(loc_scratchpad));
+    loc_status = ds18b20_CheckScratchpad(loc_scratchpad, sizeof(loc_scratchpad));
     if(loc_status != 0)
     {
       loc_temperature = ds18b20_DecodeTemperature(loc_scratchpad);
     }
     else
     {
-      /*nothing to do*/
-      loc_temperature = ds18b20_DecodeTemperature(loc_scratchpad);
+      //nothing to do
     }
     sprintf((char*)loc_buff,"\r\nscratchpad:%02x %02x %02x %02x %02x %02x %02x %02x %02x\n\r",
         loc_scratchpad[0],
@@ -149,37 +155,12 @@ static void main_experiments_with_ds18b20(void)
 
     sprintf((char*)loc_buff,"crc is ok= %d temperature = %f\n\r", loc_status, loc_temperature);
     uart_Printf(&huart1,loc_buff);
-    {
-      uint32_t i = 0;
-      uint32_t j = 0;
-      extern uint8_t gl_bytes[2000];
-      extern uint32_t gl_bytes_num;
-      loc_buff[0]=0;
-      for(i = 0;i< gl_bytes_num; i++)
-      {
-        j=strlen(loc_buff);
-        if(((i%15) == 0)&&(i!=0))
-        {
-          sprintf((char*)&loc_buff[j],"%d\n\r", gl_bytes[i]);
-        }
-        else if((i%15) > 0)
-        {
-          sprintf((char*)&loc_buff[j],"%d ", gl_bytes[i]);
-        }
-        else
-        {
-          /**/
-        }
-      }
-      uart_Printf(&huart1,loc_buff);
-      gl_bytes_num = 0;
-    }
   }
   else
   {
-    /*nothing to do*/
+    //nothing to do
   }
-  
+  */
   
   return;
 }
